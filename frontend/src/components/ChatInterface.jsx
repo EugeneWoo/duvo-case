@@ -18,6 +18,15 @@ export default function ChatInterface() {
     scrollToBottom()
   }, [messages])
 
+  useEffect(() => {
+    const CACHE_DURATION = 60 * 60 * 1000 // 1 hour
+    const timer = setTimeout(() => {
+      window.location.reload()
+    }, CACHE_DURATION)
+
+    return () => clearTimeout(timer)
+  }, [])
+
   const handleSendMessage = async (text) => {
     const userMessage = {
       id: Date.now(),
