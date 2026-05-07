@@ -5,6 +5,61 @@ const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
+// In-memory trace storage
+export const traceStore = {
+  traces: [],
+  currentTrace: null,
+
+  startTrace(userMessage) {
+    this.currentTrace = {
+      id: Date.now(),
+      userMessage,
+      startTime: new Date().toISOString(),
+      steps: [],
+      status: "running",
+      finalResult: null,
+    };
+    this.traces.unshift(this.currentTrace);
+    return this.currentTrace.id;
+  },
+
+  addStep(traceId, step) {
+    const trace = this.traces.find((t) => t.id === traceId);
+    if (trace) {
+      trace.steps.push({
+        ...step,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  },
+
+  completeTrace(traceId, result) {
+    const trace = this.traces.find((t) => t.id === traceId);
+    if (trace) {
+      trace.status = "completed";
+      trace.finalResult = result;
+      trace.endTime = new Date().toISOString();
+    }
+  },
+
+  failTrace(traceId, error) {
+    const trace = this.traces.find((t) => t.id === traceId);
+    if (trace) {
+      trace.status = "failed";
+      trace.error = error;
+      trace.endTime = new Date().toISOString();
+    }
+  },
+
+  getTraces() {
+    return this.traces.slice(0, 50);
+  },
+
+  getTrace(id) {
+    return this.traces.find((t) => t.id === id);
+  },
+};
+
 const tools = [
   {
     name: "web_search",
@@ -119,10 +174,24 @@ function executeCalculator(operation, a, b) {
   return `${a} ${operation} ${b} = ${operations[operation]}`;
 }
 
-async function runAgentCore(userMessage, model) {
+async function runAgentCore(userMessage, model, traceId = null) {
   const messages = [{ role: "user", content: userMessage }];
+  let stepNum = 0;
 
   while (true) {
+    stepNum++;
+    const stepId = `step_${stepNum}`;
+
+    if (traceId) {
+      traceStore.addStep(traceId, {
+        stepNumber: stepNum,
+        status: "thinking",
+        type: "api_call",
+        model,
+        messageCount: messages.length,
+      });
+    }
+
     const response = await client.messages.create({
       model,
       max_tokens: 1024,
@@ -138,29 +207,71 @@ async function runAgentCore(userMessage, model) {
     }
 
     if (response.stop_reason === "tool_use") {
+      if (traceId) {
+        traceStore.addStep(traceId, {
+          stepNumber: stepNum,
+          status: "tool_use",
+          type: "tool_decision",
+          toolsToCall: response.content
+            .filter((b) => b.type === "tool_use")
+            .map((b) => ({ name: b.name, id: b.id })),
+        });
+      }
+
       const toolResults = [];
 
       for (const block of response.content) {
         if (block.type === "tool_use") {
           const toolName = block.name;
           const toolInput = block.input;
+          const toolId = block.id;
+
+          if (traceId) {
+            traceStore.addStep(traceId, {
+              stepNumber: stepNum,
+              status: "executing",
+              type: "tool_execution",
+              toolName,
+              toolInput,
+              toolId,
+            });
+          }
 
           let result;
-          if (toolName === "web_search") {
-            result = await executeWebSearch(toolInput.query);
-          } else if (toolName === "weather") {
-            result = executeWeather(toolInput.location);
-          } else if (toolName === "calculator") {
-            result = executeCalculator(
-              toolInput.operation,
-              toolInput.a,
-              toolInput.b
-            );
+          try {
+            if (toolName === "web_search") {
+              result = await executeWebSearch(toolInput.query);
+            } else if (toolName === "weather") {
+              result = executeWeather(toolInput.location);
+            } else if (toolName === "calculator") {
+              result = executeCalculator(
+                toolInput.operation,
+                toolInput.a,
+                toolInput.b
+              );
+            }
+          } catch (error) {
+            result = `Error: ${error.message}`;
+          }
+
+          if (traceId) {
+            const resultSnippet =
+              typeof result === "string"
+                ? result.substring(0, 200)
+                : JSON.stringify(result).substring(0, 200);
+            traceStore.addStep(traceId, {
+              stepNumber: stepNum,
+              status: "completed",
+              type: "tool_result",
+              toolName,
+              toolId,
+              resultSnippet,
+            });
           }
 
           toolResults.push({
             type: "tool_result",
-            tool_use_id: block.id,
+            tool_use_id: toolId,
             content: result,
           });
         }
@@ -169,12 +280,20 @@ async function runAgentCore(userMessage, model) {
       messages.push({ role: "assistant", content: response.content });
       messages.push({ role: "user", content: toolResults });
     } else {
+      if (traceId) {
+        traceStore.addStep(traceId, {
+          stepNumber: stepNum,
+          status: "final",
+          type: "completion",
+          resultSnippet: textContent.substring(0, 300),
+        });
+      }
       return textContent;
     }
   }
 }
 
-export async function runAgentWithRetry(userMessage, maxRetries = 3) {
+export async function runAgentWithRetry(userMessage, maxRetries = 3, traceId = null) {
   const models = [
     "claude-sonnet-4-6",
     "claude-haiku-4-5-20251001",
@@ -185,7 +304,11 @@ export async function runAgentWithRetry(userMessage, maxRetries = 3) {
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
-        return await runAgentCore(userMessage, model);
+        const result = await runAgentCore(userMessage, model, traceId);
+        if (traceId) {
+          traceStore.completeTrace(traceId, result);
+        }
+        return result;
       } catch (error) {
         console.error(
           `Attempt ${attempt + 1}/${maxRetries} failed for ${model}:`,
@@ -201,6 +324,9 @@ export async function runAgentWithRetry(userMessage, maxRetries = 3) {
     console.error(`Model ${model} exhausted retries, trying fallback...`);
   }
 
+  if (traceId) {
+    traceStore.failTrace(traceId, "All retry attempts and model fallbacks exhausted");
+  }
   throw new Error("All retry attempts and model fallbacks exhausted");
 }
 

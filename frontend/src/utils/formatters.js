@@ -78,6 +78,41 @@ export function formatChatAsPdf(messages) {
   return doc;
 }
 
+export function formatChatAsCsv(messages) {
+  const escapeField = (field) => {
+    if (field === null || field === undefined) return '';
+    const str = String(field).trim();
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
+  const rows = ['Title,Source,Summary,URL'];
+
+  messages.forEach((msg) => {
+    if (msg.role === 'assistant' && msg.content.includes('<h3>')) {
+      // Parse HTML articles
+      const articleRegex = /<h3>([^<]+)<\/h3>\s*<p>([^<]+)<\/p>\s*<p><a href="([^"]+)"/g;
+      let match;
+      while ((match = articleRegex.exec(msg.content)) !== null) {
+        const title = match[1];
+        const summary = match[2];
+        const url = match[3];
+        rows.push(
+          `${escapeField(title)},AI News,${escapeField(summary)},${escapeField(url)}`
+        );
+      }
+    } else if (msg.role === 'user') {
+      rows.push(`${escapeField(msg.content)},User,${escapeField(msg.content)},`);
+    } else {
+      rows.push(`Response,Agent,${escapeField(msg.content)},`);
+    }
+  });
+
+  return rows.join('\n');
+}
+
 export function downloadFile(content, filename, mimeType) {
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);

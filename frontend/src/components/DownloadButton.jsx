@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react'
-import { formatChatAsMarkdown, formatChatAsPdf, downloadFile } from '../utils/formatters'
+import { formatChatAsMarkdown, formatChatAsPdf, formatChatAsCsv, downloadFile } from '../utils/formatters'
 import { cacheMessages } from '../utils/cacheManager'
 
 export default function DownloadButton({ messages, disabled }) {
@@ -37,6 +37,13 @@ export default function DownloadButton({ messages, disabled }) {
     setIsOpen(false)
   }
 
+  const handleDownloadCsv = () => {
+    const csv = formatChatAsCsv(messages)
+    const filename = `chat-${new Date().toISOString().slice(0, 10)}.csv`
+    downloadFile(csv, filename, 'text/csv')
+    setIsOpen(false)
+  }
+
   return (
     <div className="relative" ref={dropdownRef}>
       <button
@@ -54,6 +61,12 @@ export default function DownloadButton({ messages, disabled }) {
             className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 border-b border-slate-100 font-serif"
           >
             Markdown (.md)
+          </button>
+          <button
+            onClick={handleDownloadCsv}
+            className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 border-b border-slate-100 font-serif"
+          >
+            CSV (.csv)
           </button>
           <button
             onClick={handleDownloadPdf}
