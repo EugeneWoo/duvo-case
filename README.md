@@ -1,6 +1,31 @@
 # Duvo Agent
 
-Lightweight AI chat interface with retry logic and model fallback.
+Agentic AI chat interface with web search, real-time observability, and multi-format export.
+
+## Features
+
+### Chat & Search
+- **Web Search Integration**: Agentic chat with real-time web search tool for current information and news
+- **Intelligent Agent**: Claude-powered agent with retry logic (3 attempts) and model fallback (Opus → Sonnet → Haiku)
+- **CSV Function Calling**: Generate and export structured CSV data directly from chat
+
+### Data Export
+- **Multi-Format Export**: Download conversations as Markdown, PDF, or CSV
+- **Google Drive Integration**: Export Markdown files directly to Google Drive via OAuth (see [Google Drive Setup](#google-drive-self-service-oauth))
+- **Format Options**:
+  - **Markdown (.md)**: Full conversation transcript for documentation
+  - **PDF (.pdf)**: Formatted export for sharing and archiving
+  - **CSV (.csv)**: Structured data export from function calls
+
+### Observability & Reliability
+- **Step-by-Step Traces**: View `/traces` HTML dashboard for complete execution visibility
+  - API calls, tool decisions, tool execution, results
+  - Status tracking (running, completed, failed)
+  - Timestamps and model usage metrics
+- **LLM-as-Judge**: Built-in evaluation of agent relevance and task completion
+  - Validates responses against user intent
+  - Ensures factual accuracy from web search results
+  - Tracks task completion status
 
 ## Setup
 
@@ -14,6 +39,11 @@ npm install
 Create `.env`:
 ```
 ANTHROPIC_API_KEY=sk-...
+GEMINI_API_KEY=...
+TAVILY_API_KEY=...
+SUPABASE_URL=...
+SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
 ```
 
 Run:
@@ -31,19 +61,68 @@ npm install
 npm run dev
 ```
 
-Frontend runs on `http://localhost:5173`
+Frontend runs on `http://localhost:5173` (or next available port)
 
-## Features
+## Google Drive Self-Service OAuth
 
-- **Chat Interface**: Clean, brutalist UI with Tailwind CSS
-- **Retry Logic**: 3 retries per model before fallback
-- **Model Fallback**: Opus → Sonnet → Haiku
-- **Loading State**: Animated thinking spinner with amber accent
-- **Error Handling**: User-friendly error messages with retry option
-- **Tool Support**: Weather and calculator tools
+**No tokens. No Google Cloud Console. One-click login.**
+
+### How It Works
+1. User clicks "Google Drive" in download dropdown
+2. OAuth popup opens → user logs in with Google account
+3. Token stored securely in browser → file uploads automatically
+4. Token auto-refreshes on expiry
+
+### User Setup (2 minutes)
+1. Get Google Client ID from [Google Cloud Console](https://console.cloud.google.com/):
+   - Create project
+   - Enable Google Drive API
+   - Create OAuth credentials (Web app)
+   - Add redirect URIs: `http://localhost:5173/oauth-callback` and `http://localhost:5174/oauth-callback`
+
+2. Create `frontend/.env.local`:
+   ```
+   VITE_GOOGLE_CLIENT_ID=your_client_id_here
+   ```
+
+3. Restart frontend dev server
+
+See [docs/GOOGLE_DRIVE_SETUP.md](./docs/GOOGLE_DRIVE_SETUP.md) for detailed instructions.
+
+## Usage
+
+### Chat
+- Type message → agent searches web in real-time → get current information
+- Use natural language for complex queries
+
+### Export
+1. Click "Download" button
+2. Choose format:
+   - **Markdown**: Full transcript with formatting
+   - **CSV**: Structured data from function calls
+   - **PDF**: Formatted document
+   - **Google Drive**: Direct upload to your Drive (after OAuth setup)
+
+### Observability
+- Navigate to `http://localhost:3000/traces` to view:
+  - Real-time execution traces
+  - Step-by-step agent decisions
+  - Tool calls and results
+  - Performance metrics
+  - Auto-refresh enabled by default
 
 ## Architecture
 
-- **Frontend**: React + Tailwind with Vite
-- **Backend**: Express + Anthropic SDK
+- **Frontend**: React + Tailwind + Vite + React Router
+- **Backend**: Express + Anthropic SDK + Tavily (web search) + Supabase
+- **Tools**: Web search, CSV generation, Google Drive API
+- **Observability**: In-memory trace store with HTML dashboard
+
+## Tech Stack
+
+- **AI**: Claude 3.5 Sonnet (fallback to Haiku)
+- **Search**: Tavily API
+- **Database/Auth**: Supabase (configured, not required for MVP)
+- **Cloud Storage**: Google Drive (optional, OAuth)
+- **Frontend**: React 18, Tailwind CSS
 - **Styling**: Brutalist minimalism with warm amber accents

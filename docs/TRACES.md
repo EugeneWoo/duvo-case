@@ -17,6 +17,11 @@ Open browser to `http://localhost:3000/traces.html` when backend is running.
   - Tool calls with input parameters
   - Result snippets (first 200 chars)
   - Message count in context
+- **LLM Judge Evaluation** (Claude Sonnet):
+  - **Task Completion Y/N**: Did agent successfully complete the user's request?
+  - **Relevance Y/N**: Is the result relevant and directly addressing the request?
+  - Click "Evaluate" button on any trace to run judge
+  - Results cached per trace (click "Re-evaluate" to refresh)
 - **Auto-refresh**: Toggle checkbox to auto-refresh every 2 seconds (default: on)
 - **Manual refresh**: Click "Refresh Traces" button
 - **Clean history**: Click "Clear All" to remove trace from memory
@@ -64,6 +69,27 @@ Returns single trace by ID.
 curl http://localhost:3000/api/traces/1234567890
 ```
 
+### POST `/api/traces/:id/evaluate`
+Evaluates trace using Claude Sonnet as judge. Returns completion success (Y/N) and relevance (Y/N).
+
+```bash
+curl -X POST http://localhost:3000/api/traces/1234567890/evaluate
+```
+
+Response:
+```json
+{
+  "evaluation": {
+    "completionSuccess": true,
+    "relevance": true,
+    "evaluatedAt": "2026-05-07T15:04:31.059Z",
+    "rawResponse": "COMPLETION: Y\nRELEVANCE: Y"
+  }
+}
+```
+
+Results are cached on the trace object. Re-call to get updated evaluation.
+
 ## Trace Structure
 
 Each trace capture includes:
@@ -74,6 +100,11 @@ Each trace capture includes:
   - Current status
   - Relevant data (model, tool name, input, result snippet)
   - Timestamp
+- **Evaluation** (optional): LLM judge results
+  - `completionSuccess`: true/false/null
+  - `relevance`: true/false/null
+  - `evaluatedAt`: ISO timestamp when evaluated
+  - `rawResponse`: Full response from judge
 
 Example trace with tool use:
 

@@ -5,6 +5,9 @@ const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
+const COMPLETION_PATTERN = /COMPLETION:\s*([YN])/i;
+const RELEVANCE_PATTERN = /RELEVANCE:\s*([YN])/i;
+
 // In-memory trace storage
 export const traceStore = {
   traces: [],
@@ -57,6 +60,77 @@ export const traceStore = {
 
   getTrace(id) {
     return this.traces.find((t) => t.id === id);
+  },
+
+  async evaluateTrace(id) {
+    const trace = this.getTrace(id);
+    if (!trace) throw new Error("Trace not found");
+
+    if (trace.evaluation) {
+      return trace.evaluation;
+    }
+
+    const stepsSummary = trace.steps
+      .map((s, i) => {
+        let desc = `Step ${i + 1}: ${s.type} (${s.status})`;
+        if (s.toolName) desc += ` - Tool: ${s.toolName}`;
+        if (s.resultSnippet) desc += ` - Result: ${s.resultSnippet}`;
+        return desc;
+      })
+      .join("\n");
+
+    const prompt = `You are an expert evaluator of AI agent task execution. Evaluate this agent execution trace:
+
+USER REQUEST: "${trace.userMessage}"
+
+AGENT STEPS:
+${stepsSummary}
+
+FINAL RESULT:
+${trace.finalResult || "(No result)"}
+
+Evaluate on two criteria:
+
+1. TASK COMPLETION: Did the agent successfully complete the task the user requested? (Y/N)
+2. RELEVANCE: Is the result relevant and directly addresses the user's request? (Y/N)
+
+Respond with ONLY this format, no other text:
+COMPLETION: Y
+RELEVANCE: Y`;
+
+    try {
+      const evaluation = await client.messages.create({
+        model: "claude-sonnet-4-6",
+        max_tokens: 100,
+        messages: [
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+      });
+
+      const responseText = evaluation.content[0]?.text || "";
+      const completionMatch = responseText.match(COMPLETION_PATTERN);
+      const relevanceMatch = responseText.match(RELEVANCE_PATTERN);
+
+      trace.evaluation = {
+        completionSuccess: completionMatch ? completionMatch[1].toUpperCase() === "Y" : null,
+        relevance: relevanceMatch ? relevanceMatch[1].toUpperCase() === "Y" : null,
+        evaluatedAt: new Date().toISOString(),
+        rawResponse: responseText,
+      };
+
+      return trace.evaluation;
+    } catch (error) {
+      trace.evaluation = {
+        completionSuccess: null,
+        relevance: null,
+        evaluatedAt: new Date().toISOString(),
+        error: error.message,
+      };
+      return trace.evaluation;
+    }
   },
 };
 

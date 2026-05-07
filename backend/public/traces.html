@@ -192,6 +192,69 @@
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
+
+    .evaluation-section {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 12px;
+      margin-top: 12px;
+    }
+
+    .evaluation-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .evaluation-title {
+      font-weight: 600;
+      color: #f1f5f9;
+      font-size: 14px;
+    }
+
+    .evaluate-btn {
+      padding: 4px 12px;
+      background: #10b981;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background 0.2s;
+    }
+    .evaluate-btn:hover { background: #059669; }
+    .evaluate-btn:disabled { background: #64748b; }
+
+    .evaluation-results {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .eval-item {
+      background: #0f172a;
+      border-radius: 4px;
+      padding: 8px;
+      font-size: 13px;
+    }
+
+    .eval-label {
+      color: #94a3b8;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .eval-value {
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    .eval-yes { color: #86efac; }
+    .eval-no { color: #fca5a5; }
+    .eval-pending { color: #94a3b8; }
   </style>
 </head>
 <body>
@@ -262,6 +325,32 @@
                 ${escapeHtml(trace.finalResult.substring(0, 500))}${trace.finalResult.length > 500 ? '...' : ''}
               </div>
             ` : ''}
+            <div class="evaluation-section">
+              <div class="evaluation-header">
+                <div class="evaluation-title">LLM Judge Evaluation</div>
+                <button class="evaluate-btn" onclick="evaluateTrace(${trace.id})" ${trace.evaluation && trace.evaluation.evaluatedAt ? 'style="background:#64748b"' : ''}>
+                  ${trace.evaluation && trace.evaluation.evaluatedAt ? 'Re-evaluate' : 'Evaluate'}
+                </button>
+              </div>
+              ${trace.evaluation && trace.evaluation.evaluatedAt ? `
+                <div class="evaluation-results">
+                  <div class="eval-item">
+                    <div class="eval-label">Task Completion</div>
+                    <div class="eval-value ${trace.evaluation.completionSuccess === true ? 'eval-yes' : trace.evaluation.completionSuccess === false ? 'eval-no' : 'eval-pending'}">
+                      ${trace.evaluation.completionSuccess === true ? '✓ Yes' : trace.evaluation.completionSuccess === false ? '✗ No' : '—'}
+                    </div>
+                  </div>
+                  <div class="eval-item">
+                    <div class="eval-label">Relevance</div>
+                    <div class="eval-value ${trace.evaluation.relevance === true ? 'eval-yes' : trace.evaluation.relevance === false ? 'eval-no' : 'eval-pending'}">
+                      ${trace.evaluation.relevance === true ? '✓ Yes' : trace.evaluation.relevance === false ? '✗ No' : '—'}
+                    </div>
+                  </div>
+                </div>
+              ` : `
+                <div style="color: #64748b; font-size: 12px; margin-top: 8px;">Click "Evaluate" to run LLM judge</div>
+              `}
+            </div>
           </div>
         </div>
       `).join('');
@@ -345,6 +434,32 @@
     function formatTime(isoString) {
       const date = new Date(isoString);
       return date.toLocaleTimeString();
+    }
+
+    async function evaluateTrace(traceId) {
+      try {
+        const btn = event.target;
+        btn.disabled = true;
+        btn.textContent = 'Evaluating...';
+
+        const res = await fetch(API_BASE + `/api/traces/${traceId}/evaluate`, {
+          method: 'POST',
+        });
+
+        if (!res.ok) throw new Error('Evaluation failed');
+        const { evaluation } = await res.json();
+
+        // Update trace in memory and re-render
+        const traces = document.querySelectorAll('.trace-card');
+        refreshTraces();
+      } catch (err) {
+        console.error('Evaluation error:', err);
+        alert('Error evaluating trace: ' + err.message);
+        if (event.target) {
+          event.target.disabled = false;
+          event.target.textContent = 'Evaluate';
+        }
+      }
     }
 
     function clearAllTraces() {

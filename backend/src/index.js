@@ -66,6 +66,17 @@ app.get("/api/traces/:id", (req, res) => {
   res.json(trace);
 });
 
+app.post("/api/traces/:id/evaluate", async (req, res) => {
+  try {
+    const traceId = parseInt(req.params.id);
+    const evaluation = await traceStore.evaluateTrace(traceId);
+    res.json({ evaluation });
+  } catch (error) {
+    console.error("Evaluation error:", error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get("/traces", (req, res) => {
   res.setHeader("Content-Type", "text/html");
   res.send(tracesHtmlPage);
