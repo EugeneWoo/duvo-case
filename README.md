@@ -6,7 +6,7 @@ Agentic AI chat interface with web search, real-time observability, and multi-fo
 
 ### Chat & Search
 - **Web Search Integration**: Agentic chat with real-time web search tool for current information and news
-- **Intelligent Agent**: Claude-powered agent with retry logic (3 attempts) and model fallback (Opus → Sonnet → Haiku)
+- **Intelligent Agent**: Claude-powered agent with retry logic (3 attempts) and model fallback (Sonnet → Haiku)
 - **CSV Function Calling**: Generate and export structured CSV data directly from chat
 
 ### Data Export
@@ -120,7 +120,7 @@ See [docs/GOOGLE_DRIVE_SETUP.md](./docs/GOOGLE_DRIVE_SETUP.md) for detailed inst
 
 ## Tech Stack
 
-- **AI**: Claude 3.5 Sonnet (fallback to Haiku)
+- **AI**: Claude Sonnet (fallback to Haiku)
 - **Search**: Tavily API
 - **Database/Auth**: Supabase (configured, not required for MVP)
 - **Cloud Storage**: Google Drive (optional, OAuth)

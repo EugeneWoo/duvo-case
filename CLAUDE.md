@@ -12,7 +12,7 @@ Functional agentic webapp. Core features complete: chat with web search, multi-f
 
 ### Backend
 - Express server on port 3000
-- Anthropic SDK for Claude (retry logic + model fallback: Opus → Sonnet → Haiku)
+- Anthropic SDK for Claude (retry logic + model fallback: Sonnet → Haiku)
 - Web search via Tavily API
 - Google Drive API integration (OAuth token-based upload)
 - In-memory trace store for observability
