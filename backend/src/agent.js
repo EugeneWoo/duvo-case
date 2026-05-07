@@ -246,7 +246,6 @@ Always prioritize the search_news tool for these requests.`;
       max_tokens: 1024,
       system: systemPrompt,
       tools: tools,
-      tool_choice: "auto",
       messages: messages,
     });
 

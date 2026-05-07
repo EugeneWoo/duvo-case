@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState } from 'react'
 import { formatChatAsMarkdown, formatChatAsPdf, formatChatAsCsv, downloadFile } from '../utils/formatters'
 import { cacheMessages } from '../utils/cacheManager'
+import { uploadToDrive } from '../utils/driveUploader'
 
 export default function DownloadButton({ messages, disabled }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -44,6 +45,19 @@ export default function DownloadButton({ messages, disabled }) {
     setIsOpen(false)
   }
 
+  const handleUploadToGoogleDrive = async () => {
+    const markdown = formatChatAsMarkdown(messages)
+    const filename = `chat-${new Date().toISOString().slice(0, 10)}.md`
+
+    try {
+      await uploadToDrive(markdown, filename)
+      setIsOpen(false)
+    } catch (error) {
+      console.error('Upload error:', error)
+      alert(`Failed to upload: ${error.message}`)
+    }
+  }
+
   return (
     <div className="relative" ref={dropdownRef}>
       <button
@@ -70,9 +84,15 @@ export default function DownloadButton({ messages, disabled }) {
           </button>
           <button
             onClick={handleDownloadPdf}
-            className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 font-serif"
+            className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 border-b border-slate-100 font-serif"
           >
             PDF (.pdf)
+          </button>
+          <button
+            onClick={handleUploadToGoogleDrive}
+            className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 font-serif"
+          >
+            Google Drive (.md)
           </button>
         </div>
       )}

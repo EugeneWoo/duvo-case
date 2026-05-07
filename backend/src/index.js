@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import "dotenv/config";
 import { runAgentWithRetry, traceStore } from "./agent.js";
+import { uploadMarkdownToDrive } from "./googleDrive.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -29,6 +30,26 @@ app.post("/api/chat", async (req, res) => {
       error: "Our friendly AI agent is feeling out of sorts. Please try again later.",
       traceId,
     });
+  }
+});
+
+app.post("/api/upload-to-drive", async (req, res) => {
+  const { filename, content, accessToken } = req.body;
+
+  if (!filename || !content) {
+    return res.status(400).json({ error: "Filename and content are required" });
+  }
+
+  if (!accessToken) {
+    return res.status(401).json({ error: "Google Drive access token required" });
+  }
+
+  try {
+    const result = await uploadMarkdownToDrive(filename, content, accessToken);
+    res.json(result);
+  } catch (error) {
+    console.error("Google Drive upload error:", error.message);
+    res.status(500).json({ error: error.message });
   }
 });
 
