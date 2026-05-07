@@ -346,6 +346,16 @@ Always prioritize the search_news tool for these requests.`;
   }
 }
 
+function isNewsQuery(message) {
+  const newsKeywords = [
+    'news', 'latest', 'recent', 'current', 'fetch', 'search',
+    'articles', 'stories', 'updates', 'events', 'happening',
+    'today', 'this week', 'breaking', 'trending', 'what\'s new'
+  ];
+  const messageLower = message.toLowerCase();
+  return newsKeywords.some(keyword => messageLower.includes(keyword));
+}
+
 export async function runAgentWithRetry(userMessage, maxRetries = 3, traceId = null) {
   const models = [
     "claude-sonnet-4-6",
@@ -357,7 +367,14 @@ export async function runAgentWithRetry(userMessage, maxRetries = 3, traceId = n
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
-        const result = await runAgentCore(userMessage, model, traceId);
+        let result = await runAgentCore(userMessage, model, traceId);
+
+        // Check if this was a news query but the model didn't return CSV
+        if (isNewsQuery(userMessage) && !result.includes('Title,Summary,Source')) {
+          console.log("News query detected but no CSV returned. Forcing search_news...");
+          result = await executeSearchNews(userMessage);
+        }
+
         if (traceId) {
           traceStore.completeTrace(traceId, result);
         }
