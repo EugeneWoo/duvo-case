@@ -72,8 +72,8 @@ Frontend runs on `http://localhost:5173` (or next available port)
 ### How It Works
 1. User clicks "Google Drive" in download dropdown
 2. OAuth popup opens → user logs in with Google account
-3. Token stored securely in browser → file uploads automatically
-4. Token auto-refreshes on expiry
+3. Token stored in browser localStorage → file uploads automatically
+4. Token re-authenticates on expiry (user prompted to login again)
 
 ### User Setup (2 minutes)
 1. Get Google Client ID from [Google Cloud Console](https://console.cloud.google.com/):
