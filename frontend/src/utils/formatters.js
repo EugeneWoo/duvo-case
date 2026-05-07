@@ -192,37 +192,36 @@ export function formatChatAsPdf(messages) {
 }
 
 export function formatChatAsCsv(messages) {
-  const results = [];
+  const allRows = [];
 
   messages.forEach((msg) => {
     if (msg.role === 'assistant' && msg.content.includes('Title,Source,Summary,URL')) {
-      // Raw CSV from web_search - include as-is
-      results.push(msg.content);
+      // Raw CSV from web_search
+      const lines = msg.content.trim().split('\n');
+      // Skip header, add data rows
+      allRows.push(...lines.slice(1));
     } else if (msg.role === 'assistant' && msg.content.includes('<h3>')) {
       // Parse HTML articles (legacy format)
       const articleRegex = /<h3>([^<]+)<\/h3>\s*<p>([^<]+)<\/p>\s*<p><a href="([^"]+)"/g;
       let match;
-      const csvRows = ['Title,Source,Summary,URL'];
       while ((match = articleRegex.exec(msg.content)) !== null) {
         const title = match[1];
         const summary = match[2];
         const url = match[3];
-        csvRows.push(
+        allRows.push(
           `${escapeField(title)},AI News,${escapeField(summary)},${escapeField(url)}`
         );
-      }
-      if (csvRows.length > 1) {
-        results.push(csvRows.join('\n'));
       }
     }
   });
 
-  if (results.length === 0) {
-    // Return empty CSV with headers if no search results
-    return 'Title,Source,Summary,URL';
+  // Always return CSV with header
+  const csv = ['Title,Source,Summary,URL'];
+  if (allRows.length > 0) {
+    csv.push(...allRows);
   }
 
-  return results.join('\n');
+  return csv.join('\n');
 }
 
 function escapeField(field) {
