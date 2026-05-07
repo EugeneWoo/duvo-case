@@ -33,8 +33,6 @@ Functional agentic webapp. Core features complete: chat with web search, multi-f
 - **AI**: Claude Sonnet via Anthropic SDK (`ANTHROPIC_API_KEY` in `backend/.env`)
 - **Search**: Tavily API (`TAVILY_API_KEY` in `backend/.env`)
 - **Cloud Storage**: Google Drive API (OAuth flow, no service account needed)
-- **Database/Auth**: Supabase (configured but optional for MVP) — `SUPABASE_*` keys in `backend/.env`
-- **Gemini**: `GEMINI_API_KEY` in `backend/.env` (not currently used)
 
 ## Agent-OS Workflow
 

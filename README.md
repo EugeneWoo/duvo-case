@@ -114,7 +114,7 @@ See [docs/GOOGLE_DRIVE_SETUP.md](./docs/GOOGLE_DRIVE_SETUP.md) for detailed inst
 ## Architecture
 
 - **Frontend**: React + Tailwind + Vite + React Router
-- **Backend**: Express + Anthropic SDK + Tavily (web search) + Supabase
+- **Backend**: Express + Anthropic SDK + Tavily (web search)
 - **Tools**: Web search, CSV generation, Google Drive API
 - **Observability**: In-memory trace store with HTML dashboard
 
@@ -124,7 +124,6 @@ See [docs/GOOGLE_DRIVE_SETUP.md](./docs/GOOGLE_DRIVE_SETUP.md) for detailed inst
   - Sonnet: optimal latency/quality/cost ratio for agent workloads
   - Opus excluded: 3–4× cost with marginal quality improvement; higher token latency unsuitable for real-time chat
 - **Search**: Tavily API
-- **Database/Auth**: Supabase (configured, not required for MVP)
 - **Cloud Storage**: Google Drive (optional, OAuth)
 - **Frontend**: React 18, Tailwind CSS
 - **Styling**: Brutalist minimalism with warm amber accents
