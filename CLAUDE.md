@@ -27,6 +27,7 @@ Functional agentic webapp. Core features complete: chat with web search, multi-f
 - Download button: Markdown, PDF, CSV, Google Drive exports
 - OAuth callback handler for Google Drive login
 - localStorage token management for Google Drive
+- Session cache: messages cached to sessionStorage, auto-reload after 1 hour to clear stale data
 
 ## Known Infrastructure
 

@@ -9,9 +9,13 @@ Agentic AI chat interface with web search, real-time observability, and multi-fo
 - **Intelligent Agent**: Claude-powered agent with retry logic (3 attempts) and model fallback (Sonnet → Haiku)
 - **CSV Function Calling**: Generate and export structured CSV data directly from chat
 
-### Data Export
+### Data Export & Caching
 - **Multi-Format Export**: Download conversations as Markdown, PDF, or CSV
 - **Google Drive Integration**: Export Markdown files directly to Google Drive via OAuth (see [Google Drive Setup](#google-drive-self-service-oauth))
+- **Session Cache**: Messages cached in browser sessionStorage during active session
+  - Auto-clears after 1 hour (page auto-reloads)
+  - Persists across manual page refreshes within 1 hour
+  - Prevents stale chat data beyond session timeout
 - **Format Options**:
   - **Markdown (.md)**: Full conversation transcript for documentation
   - **PDF (.pdf)**: Formatted export for sharing and archiving
