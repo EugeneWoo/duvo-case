@@ -121,6 +121,8 @@ See [docs/GOOGLE_DRIVE_SETUP.md](./docs/GOOGLE_DRIVE_SETUP.md) for detailed inst
 ## Tech Stack
 
 - **AI**: Claude Sonnet (fallback to Haiku)
+  - Sonnet: optimal latency/quality/cost ratio for agent workloads
+  - Opus excluded: 3–4× cost with marginal quality improvement; higher token latency unsuitable for real-time chat
 - **Search**: Tavily API
 - **Database/Auth**: Supabase (configured, not required for MVP)
 - **Cloud Storage**: Google Drive (optional, OAuth)

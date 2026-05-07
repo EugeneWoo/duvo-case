@@ -13,6 +13,9 @@ Functional agentic webapp. Core features complete: chat with web search, multi-f
 ### Backend
 - Express server on port 3000
 - Anthropic SDK for Claude (retry logic + model fallback: Sonnet → Haiku)
+  - **Model selection**: Sonnet default (cost-optimal latency/quality tradeoff)
+  - Opus excluded: higher latency (100+ tokens/sec vs 300+/sec), 3–4× cost per token, marginal quality gains for agent tasks
+  - Haiku fallback: handles rate limits, low-value queries, graceful degradation
 - Web search via Tavily API
 - Google Drive API integration (OAuth token-based upload)
 - In-memory trace store for observability
