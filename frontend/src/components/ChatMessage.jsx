@@ -1,6 +1,10 @@
+import { parseCsvToHtml } from '../utils/formatters';
+
 export default function ChatMessage({ message, isLatest }) {
   const isUser = message.role === 'user'
+  const isCsv = !isUser && message.content.includes('Title,Source,Summary,URL')
   const isHtml = !isUser && (message.content.includes('<h3>') || message.content.includes('<p>'))
+  const csvAsHtml = isCsv ? parseCsvToHtml(message.content) : ''
 
   return (
     <div
@@ -13,7 +17,15 @@ export default function ChatMessage({ message, isLatest }) {
             : 'bg-slate-100 text-slate-900 border border-slate-200'
         }`}
       >
-        {isHtml ? (
+        {isCsv ? (
+          <div
+            className="text-lg leading-relaxed font-serif prose prose-sm"
+            dangerouslySetInnerHTML={{ __html: csvAsHtml }}
+            style={{
+              color: isUser ? 'white' : 'inherit'
+            }}
+          />
+        ) : isHtml ? (
           <div
             className="text-lg leading-relaxed font-serif prose prose-sm"
             dangerouslySetInnerHTML={{ __html: message.content }}

@@ -115,6 +115,15 @@ const tools = [
 ];
 
 async function executeWebSearch(query) {
+  const escapeField = (field) => {
+    if (!field) return '';
+    const str = String(field).trim();
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
   try {
     const response = await fetch('https://api.tavily.com/search', {
       method: 'POST',
@@ -141,11 +150,12 @@ async function executeWebSearch(query) {
     }
 
     const top5 = results.slice(0, 5);
-    const html = top5
-      .map((r) => `<h3>${r.title}</h3>\n\n<p>${r.content}</p>\n\n<p><a href="${r.url}" target="_blank" style="color: #f59e0b; text-decoration: underline;">Read more</a></p>`)
-      .join('\n\n');
+    const csv = ['Title,Source,Summary,URL'];
+    csv.push(...top5.map((r) =>
+      `${escapeField(r.title)},Web Search,${escapeField(r.content)},${escapeField(r.url)}`
+    ));
 
-    return html;
+    return csv.join('\n');
   } catch (error) {
     return `Search failed: ${error.message}`;
   }
