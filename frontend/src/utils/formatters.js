@@ -192,12 +192,12 @@ export function formatChatAsPdf(messages) {
 }
 
 export function formatChatAsCsv(messages) {
-  const rows = [];
+  const results = [];
 
   messages.forEach((msg) => {
     if (msg.role === 'assistant' && msg.content.includes('Title,Source,Summary,URL')) {
       // Raw CSV from web_search - include as-is
-      rows.push(msg.content);
+      results.push(msg.content);
     } else if (msg.role === 'assistant' && msg.content.includes('<h3>')) {
       // Parse HTML articles (legacy format)
       const articleRegex = /<h3>([^<]+)<\/h3>\s*<p>([^<]+)<\/p>\s*<p><a href="([^"]+)"/g;
@@ -211,11 +211,18 @@ export function formatChatAsCsv(messages) {
           `${escapeField(title)},AI News,${escapeField(summary)},${escapeField(url)}`
         );
       }
-      rows.push(csvRows.join('\n'));
+      if (csvRows.length > 1) {
+        results.push(csvRows.join('\n'));
+      }
     }
   });
 
-  return rows.join('\n\n');
+  if (results.length === 0) {
+    // Return empty CSV with headers if no search results
+    return 'Title,Source,Summary,URL';
+  }
+
+  return results.join('\n');
 }
 
 function escapeField(field) {

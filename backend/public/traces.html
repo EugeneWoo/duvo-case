@@ -1,56 +1,3 @@
-import express from "express";
-import cors from "cors";
-import "dotenv/config";
-import { runAgentWithRetry, traceStore } from "./agent.js";
-
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-app.use(cors());
-app.use(express.json());
-app.use(express.static("public"));
-
-app.post("/api/chat", async (req, res) => {
-  const { message } = req.body;
-
-  if (!message || typeof message !== "string") {
-    return res.status(400).json({ error: "Message is required" });
-  }
-
-  const traceId = traceStore.startTrace(message);
-
-  try {
-    const response = await runAgentWithRetry(message, 3, traceId);
-    res.json({ response, traceId });
-  } catch (error) {
-    console.error("Chat error:", error.message);
-    traceStore.failTrace(traceId, error.message);
-    res.status(500).json({
-      error: "Our friendly AI agent is feeling out of sorts. Please try again later.",
-      traceId,
-    });
-  }
-});
-
-app.get("/api/traces", (req, res) => {
-  const traces = traceStore.getTraces();
-  res.json({ traces });
-});
-
-app.get("/api/traces/:id", (req, res) => {
-  const trace = traceStore.getTrace(parseInt(req.params.id));
-  if (!trace) {
-    return res.status(404).json({ error: "Trace not found" });
-  }
-  res.json(trace);
-});
-
-app.get("/traces", (req, res) => {
-  res.setHeader("Content-Type", "text/html");
-  res.send(tracesHtmlPage);
-});
-
-const tracesHtmlPage = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -164,6 +111,8 @@ const tracesHtmlPage = `
       justify-content: space-between;
       margin-bottom: 8px;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
     }
 
     .step-number {
@@ -190,7 +139,6 @@ const tracesHtmlPage = `
       border-radius: 3px;
       font-size: 11px;
       color: #cbd5e1;
-      margin-right: 8px;
     }
 
     .step-details {
@@ -252,10 +200,10 @@ const tracesHtmlPage = `
 
     <div class="controls">
       <button onclick="refreshTraces()">Refresh Traces</button>
-      <button onclick="clearTraces()">Clear All</button>
+      <button onclick="clearAllTraces()">Clear All</button>
       <label style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
         <input type="checkbox" id="autoRefresh" checked>
-        Auto-refresh
+        Auto-refresh (2s)
       </label>
     </div>
 
@@ -265,16 +213,19 @@ const tracesHtmlPage = `
   </div>
 
   <script>
+    const API_BASE = '';
     let selectedTraceId = null;
     let autoRefreshInterval = null;
 
     async function refreshTraces() {
       try {
-        const res = await fetch('/api/traces');
+        const res = await fetch(API_BASE + '/api/traces');
         const { traces } = await res.json();
         renderTraces(traces);
       } catch (err) {
         console.error('Error fetching traces:', err);
+        document.getElementById('tracesContainer').innerHTML =
+          '<div class="empty-state">Error loading traces. Check console.</div>';
       }
     }
 
@@ -286,98 +237,98 @@ const tracesHtmlPage = `
         return;
       }
 
-      container.innerHTML = traces.map(trace => \`
-        <div class="trace-card \${selectedTraceId === trace.id ? 'selected' : ''}" onclick="selectTrace(\${trace.id})">
+      container.innerHTML = traces.map(trace => `
+        <div class="trace-card ${selectedTraceId === trace.id ? 'selected' : ''}" onclick="selectTrace(${trace.id})">
           <div class="trace-header">
             <div>
-              <div class="trace-title">\${escapeHtml(trace.userMessage.substring(0, 100))}\${trace.userMessage.length > 100 ? '...' : ''}</div>
+              <div class="trace-title">${escapeHtml(trace.userMessage.substring(0, 100))}${trace.userMessage.length > 100 ? '...' : ''}</div>
               <div class="trace-meta">
-                <span class="trace-status status-\${trace.status}">
-                  \${trace.status === 'running' ? '<span class="spinner"></span> ' : ''}\${trace.status.toUpperCase()}
+                <span class="trace-status status-${trace.status}">
+                  ${trace.status === 'running' ? '<span class="spinner"></span> ' : ''}${trace.status.toUpperCase()}
                 </span>
-                <span>\${trace.steps?.length || 0} steps</span>
-                <span>\${new Date(trace.startTime).toLocaleTimeString()}</span>
+                <span>${trace.steps?.length || 0} steps</span>
+                <span>${formatTime(trace.startTime)}</span>
               </div>
             </div>
           </div>
 
-          <div class="trace-detail \${selectedTraceId === trace.id ? 'visible' : ''}">
+          <div class="trace-detail ${selectedTraceId === trace.id ? 'visible' : ''}">
             <div class="steps-container">
-              \${trace.steps.map((step, i) => renderStep(step, i)).join('')}
+              ${trace.steps.map((step, i) => renderStep(step, i)).join('')}
             </div>
-            \${trace.finalResult ? \`
+            ${trace.finalResult ? `
               <div class="final-result">
                 <strong>Final Result:</strong><br>
-                \${escapeHtml(trace.finalResult.substring(0, 500))}\${trace.finalResult.length > 500 ? '...' : ''}
+                ${escapeHtml(trace.finalResult.substring(0, 500))}${trace.finalResult.length > 500 ? '...' : ''}
               </div>
-            \` : ''}
+            ` : ''}
           </div>
         </div>
-      \`).join('');
+      `).join('');
     }
 
     function renderStep(step, index) {
       let details = '';
 
       if (step.type === 'api_call') {
-        details = \`
+        details = `
           <div class="step-detail-row">
             <span class="detail-key">Model:</span>
-            <span class="detail-value">\${step.model}</span>
+            <span class="detail-value">${step.model}</span>
           </div>
           <div class="step-detail-row">
-            <span class="detail-key">Messages:</span>
-            <span class="detail-value">\${step.messageCount}</span>
+            <span class="detail-key">Messages in context:</span>
+            <span class="detail-value">${step.messageCount}</span>
           </div>
-        \`;
+        `;
       } else if (step.type === 'tool_decision') {
-        details = \`
+        details = `
           <div class="step-detail-row">
-            <span class="detail-key">Tools to Call:</span>
-            <span class="detail-value">\${step.toolsToCall.map(t => t.name).join(', ')}</span>
+            <span class="detail-key">Tools to call:</span>
+            <span class="detail-value">${step.toolsToCall.map(t => `<code>${t.name}</code>`).join(', ')}</span>
           </div>
-        \`;
+        `;
       } else if (step.type === 'tool_execution') {
-        details = \`
+        details = `
           <div class="step-detail-row">
             <span class="detail-key">Tool:</span>
-            <span class="detail-value">\${step.toolName}</span>
+            <span class="detail-value">${step.toolName}</span>
           </div>
           <div class="step-detail-row">
             <span class="detail-key">Input:</span>
-            <span class="detail-value">\${escapeHtml(JSON.stringify(step.toolInput))}</span>
+            <span class="detail-value">${escapeHtml(JSON.stringify(step.toolInput, null, 2).substring(0, 300))}</span>
           </div>
-        \`;
+        `;
       } else if (step.type === 'tool_result') {
-        details = \`
+        details = `
           <div class="step-detail-row">
             <span class="detail-key">Tool:</span>
-            <span class="detail-value">\${step.toolName}</span>
+            <span class="detail-value">${step.toolName}</span>
           </div>
           <div class="step-detail-row">
-            <span class="detail-key">Result:</span>
-            <span class="detail-value">\${escapeHtml(step.resultSnippet)}</span>
+            <span class="detail-key">Result snippet:</span>
+            <span class="detail-value">${escapeHtml(step.resultSnippet)}</span>
           </div>
-        \`;
+        `;
       } else if (step.type === 'completion') {
-        details = \`
+        details = `
           <div class="step-detail-row">
-            <span class="detail-key">Output:</span>
-            <span class="detail-value">\${escapeHtml(step.resultSnippet)}</span>
+            <span class="detail-key">Final output:</span>
+            <span class="detail-value">${escapeHtml(step.resultSnippet)}</span>
           </div>
-        \`;
+        `;
       }
 
-      return \`
+      return `
         <div class="step">
           <div class="step-header">
-            <span class="step-number">#\${index + 1}</span>
-            <span class="step-type">\${step.type.replace(/_/g, ' ')}</span>
-            <span class="step-status \${step.status}">\${step.status.toUpperCase()}</span>
+            <span class="step-number">#${index + 1}</span>
+            <span class="step-type">${step.type.replace(/_/g, ' ')}</span>
+            <span class="step-status ${step.status}">${step.status.toUpperCase()}</span>
           </div>
-          <div class="step-details">\${details}</div>
+          <div class="step-details">${details}</div>
         </div>
-      \`;
+      `;
     }
 
     function selectTrace(traceId) {
@@ -391,11 +342,16 @@ const tracesHtmlPage = `
       return div.innerHTML;
     }
 
-    function clearTraces() {
-      if (confirm('Clear all traces?')) {
-        localStorage.removeItem('traces');
+    function formatTime(isoString) {
+      const date = new Date(isoString);
+      return date.toLocaleTimeString();
+    }
+
+    function clearAllTraces() {
+      if (confirm('Clear all traces from memory?')) {
         selectedTraceId = null;
-        refreshTraces();
+        document.getElementById('tracesContainer').innerHTML =
+          '<div class="empty-state">Traces cleared. Run new agent queries to see them here.</div>';
       }
     }
 
@@ -414,9 +370,3 @@ const tracesHtmlPage = `
   </script>
 </body>
 </html>
-`;
-
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-  console.log(`View traces at http://localhost:${PORT}/traces`);
-});
