@@ -39,11 +39,7 @@ npm install
 Create `.env`:
 ```
 ANTHROPIC_API_KEY=sk-...
-GEMINI_API_KEY=...
 TAVILY_API_KEY=...
-SUPABASE_URL=...
-SUPABASE_ANON_KEY=...
-SUPABASE_SERVICE_ROLE_KEY=...
 ```
 
 Run:
@@ -62,6 +58,8 @@ npm run dev
 ```
 
 Frontend runs on `http://localhost:5173` (or next available port)
+
+**Note**: App works immediately after setup. Google Drive export is optional — skip the Google Drive setup if you don't need it. All other features (chat, web search, .md/.pdf/.csv export, traces) work out-of-the-box.
 
 ## Google Drive Self-Service OAuth
 
