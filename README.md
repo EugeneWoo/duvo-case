@@ -63,11 +63,11 @@ npm run dev
 
 Frontend runs on `http://localhost:5173` (or next available port)
 
-**Note**: App works immediately after setup. Google Drive export is optional — skip the Google Drive setup if you don't need it. All other features (chat, web search, .md/.pdf/.csv export, traces) work out-of-the-box.
+**Note**: App works immediately after setup. No webapp authentication required — anyone with access to the URL can chat. Google Drive export is optional — skip the Google Drive setup if you don't need it. All other features (chat, web search, .md/.pdf/.csv export, traces) work out-of-the-box.
 
-## Google Drive Self-Service OAuth
+## Google Drive Self-Service OAuth (Optional)
 
-**No tokens. No Google Cloud Console. One-click login.**
+**For Drive export only. No webapp authentication required.**
 
 ### How It Works
 1. User clicks "Google Drive" in download dropdown

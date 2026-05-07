@@ -6,7 +6,7 @@ Do not narrate intermediate steps. Execute directly and report only what changed
 
 ## Project State
 
-Functional agentic webapp. Core features complete: chat with web search, multi-format export (.md/.pdf/.csv), Google Drive integration, and observability dashboard.
+Functional agentic webapp. Core features complete: chat with web search, multi-format export (.md/.pdf/.csv), Google Drive integration, and observability dashboard. **Stateless, unauthenticated** — no webapp login required. Anyone with access to the URL can chat and view traces.
 
 ## Current Implementation
 
