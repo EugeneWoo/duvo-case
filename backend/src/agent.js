@@ -188,6 +188,8 @@ async function runAgentCore(userMessage, model, traceId = null) {
   const messages = [{ role: "user", content: userMessage }];
   let stepNum = 0;
 
+  const systemPrompt = `You are a helpful AI assistant. When users ask about current events, latest news, recent updates, or anything that requires current information, use the web_search tool to fetch the latest data. For queries about news, articles, current information, or anything time-sensitive, always use web_search first.`;
+
   while (true) {
     stepNum++;
     const stepId = `step_${stepNum}`;
@@ -205,6 +207,7 @@ async function runAgentCore(userMessage, model, traceId = null) {
     const response = await client.messages.create({
       model,
       max_tokens: 1024,
+      system: systemPrompt,
       tools: tools,
       messages: messages,
     });
