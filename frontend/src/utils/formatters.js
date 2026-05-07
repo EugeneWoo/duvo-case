@@ -8,10 +8,10 @@ export function parseCsvToHtml(csvText) {
   const rows = lines.slice(1);
   const html = rows.map((line) => {
     const fields = parseCsvLine(line);
-    if (fields.length < 4) return '';
+    if (fields.length < 3) return '';
 
-    const [title, source, summary, url] = fields;
-    return `<h3>${escapeHtml(title)}</h3>\n\n<p>${escapeHtml(summary)}</p>\n\n<p><a href="${escapeHtml(url)}" target="_blank" style="color: #f59e0b; text-decoration: underline;">Read more</a></p>`;
+    const [title, summary, source] = fields;
+    return `<h3>${escapeHtml(title)}</h3>\n\n<p>${escapeHtml(summary)}</p>`;
   }).join('\n\n');
 
   return html;
@@ -69,15 +69,14 @@ export function formatChatAsMarkdown(messages) {
     lines.push(`\n${role} *(${time})*\n`);
 
     // Convert CSV to markdown format
-    if (msg.role === 'assistant' && msg.content.includes('Title,Source,Summary,URL')) {
+    if (msg.role === 'assistant' && msg.content.includes('Title,Summary,Source')) {
       const csvLines = msg.content.trim().split('\n');
       csvLines.slice(1).forEach((line) => {
         const fields = parseCsvLine(line);
-        if (fields.length >= 4) {
-          const [title, source, summary, url] = fields;
+        if (fields.length >= 3) {
+          const [title, summary, source] = fields;
           lines.push(`\n### ${title}\n`);
           lines.push(`${summary}\n`);
-          lines.push(`[Read more](${url})\n`);
         }
       });
     } else {
@@ -134,14 +133,14 @@ export function formatChatAsPdf(messages) {
     let content = msg.content;
 
     // Convert CSV to formatted text
-    if (msg.role === 'assistant' && msg.content.includes('Title,Source,Summary,URL')) {
+    if (msg.role === 'assistant' && msg.content.includes('Title,Summary,Source')) {
       const csvLines = msg.content.trim().split('\n');
       const articles = csvLines.slice(1).map((line) => {
         const fields = parseCsvLine(line);
-        return fields.length >= 4 ? fields : null;
+        return fields.length >= 3 ? fields : null;
       }).filter(Boolean);
 
-      articles.forEach(([title, source, summary, url], idx) => {
+      articles.forEach(([title, summary, source], idx) => {
         if (yPosition > pageHeight - margin - 20) {
           doc.addPage();
           yPosition = margin;
@@ -167,9 +166,6 @@ export function formatChatAsPdf(messages) {
           yPosition += lineHeight;
         });
 
-        doc.setTextColor(100, 150, 200);
-        doc.textWithLink(`Read more`, margin, yPosition, { pageNumber: 0, url });
-        doc.setTextColor(0, 0, 0);
         yPosition += lineHeight + 3;
       });
     } else {
@@ -195,7 +191,7 @@ export function formatChatAsCsv(messages) {
   const allRows = [];
 
   messages.forEach((msg) => {
-    if (msg.role === 'assistant' && msg.content.includes('Title,Source,Summary,URL')) {
+    if (msg.role === 'assistant' && msg.content.includes('Title,Summary,Source')) {
       // Raw CSV from web_search
       const lines = msg.content.trim().split('\n');
       // Skip header, add data rows
@@ -209,14 +205,14 @@ export function formatChatAsCsv(messages) {
         const summary = match[2];
         const url = match[3];
         allRows.push(
-          `${escapeField(title)},AI News,${escapeField(summary)},${escapeField(url)}`
+          `${escapeField(title)},${escapeField(summary)},AI News`
         );
       }
     }
   });
 
   // Always return CSV with header
-  const csv = ['Title,Source,Summary,URL'];
+  const csv = ['Title,Summary,Source'];
   if (allRows.length > 0) {
     csv.push(...allRows);
   }

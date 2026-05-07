@@ -2,7 +2,7 @@ import { parseCsvToHtml } from '../utils/formatters';
 
 export default function ChatMessage({ message, isLatest }) {
   const isUser = message.role === 'user'
-  const isCsv = !isUser && message.content.includes('Title,Source,Summary,URL')
+  const isCsv = !isUser && message.content.includes('Title,Summary,Source')
   const isHtml = !isUser && (message.content.includes('<h3>') || message.content.includes('<p>'))
   const csvAsHtml = isCsv ? parseCsvToHtml(message.content) : ''
 

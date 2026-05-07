@@ -150,9 +150,9 @@ async function executeWebSearch(query) {
     }
 
     const top5 = results.slice(0, 5);
-    const csv = ['Title,Source,Summary,URL'];
+    const csv = ['Title,Summary,Source'];
     csv.push(...top5.map((r) =>
-      `${escapeField(r.title)},Web Search,${escapeField(r.content)},${escapeField(r.url)}`
+      `${escapeField(r.title)},${escapeField(r.content)},Web Search`
     ));
 
     return csv.join('\n');
