@@ -91,8 +91,10 @@ ${trace.finalResult || "(No result)"}
 
 Evaluate on two criteria:
 
-1. TASK COMPLETION: Did the agent successfully complete the task the user requested? (Y/N)
+1. TASK COMPLETION: Did the agent successfully execute and return a response? (Y/N)
 2. RELEVANCE: Is the result relevant and directly addresses the user's request? (Y/N)
+
+Note: Task completion = agent responded successfully (usually Y). Relevance = response is on-topic (may be N even if completion is Y).
 
 Respond with ONLY this format, no other text:
 COMPLETION: Y

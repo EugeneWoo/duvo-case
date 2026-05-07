@@ -18,8 +18,9 @@ Open browser to `http://localhost:3000/traces.html` when backend is running.
   - Result snippets (first 200 chars)
   - Message count in context
 - **LLM Judge Evaluation** (Claude Sonnet):
-  - **Task Completion Y/N**: Did agent successfully complete the user's request?
-  - **Relevance Y/N**: Is the result relevant and directly addressing the request?
+  - **Task Completion Y/N**: Did agent successfully execute and return a response? (Y = responded, N = error/timeout)
+  - **Relevance Y/N**: Is the result relevant and directly addresses the user's request? (Y = on-topic, N = off-topic)
+  - Completion usually Y (agent responded). Relevance may be N even when completion is Y (irrelevant but successful response).
   - Click "Evaluate" button on any trace to run judge
   - Results cached per trace (click "Re-evaluate" to refresh)
 - **Auto-refresh**: Toggle checkbox to auto-refresh every 2 seconds (default: on)

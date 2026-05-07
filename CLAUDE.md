@@ -56,7 +56,9 @@ Specs live under `.claude/specs/` (created when you run the workflow). Always wr
 - **Multi-Format Export**: Download as .md (Markdown), .pdf (PDF), .csv (CSV)
 - **Google Drive Export**: OAuth-based upload to Google Drive (no tokens, one-click login)
 - **Observability**: Step-by-step execution traces at `/traces` with tool calls, decisions, results
-- **LLM-as-Judge**: Built-in evaluation of relevance and task completion
+- **LLM-as-Judge**: Built-in evaluation of task execution and relevance
+  - Task Completion: Did agent successfully produce response? (Y = responded, N = error/timeout)
+  - Relevance: Does response address user's request? (Y = on-topic, N = off-topic/irrelevant)
 
 ## Development Notes
 

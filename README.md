@@ -26,10 +26,10 @@ Agentic AI chat interface with web search, real-time observability, and multi-fo
   - API calls, tool decisions, tool execution, results
   - Status tracking (running, completed, failed)
   - Timestamps and model usage metrics
-- **LLM-as-Judge**: Built-in evaluation of agent relevance and task completion
-  - Validates responses against user intent
-  - Ensures factual accuracy from web search results
-  - Tracks task completion status
+- **LLM-as-Judge**: Built-in evaluation of task execution and response relevance
+  - **Task Completion**: Did agent successfully respond? (Y = responded, N = error)
+  - **Relevance**: Does response address user's request? (Y = on-topic, N = off-topic)
+  - Catches irrelevant responses even when agent executes successfully
 
 ## Setup
 
