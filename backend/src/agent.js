@@ -62,8 +62,22 @@ export const traceStore = {
 
 const tools = [
   {
+    name: "search_news",
+    description: "Search for current news and articles. Returns data in CSV format (Title, Summary, Source) that can be displayed or exported.",
+    input_schema: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description: "News search query to find current articles and information",
+        },
+      },
+      required: ["query"],
+    },
+  },
+  {
     name: "web_search",
-    description: "Search the web for current information, news, and facts",
+    description: "Search the web for information, facts, and data",
     input_schema: {
       type: "object",
       properties: {
@@ -161,6 +175,11 @@ async function executeWebSearch(query) {
   }
 }
 
+async function executeSearchNews(query) {
+  // search_news tool - always returns CSV format
+  return executeWebSearch(query);
+}
+
 function executeWeather(location) {
   const weatherData = {
     "new york": { temp: 72, condition: "partly cloudy" },
@@ -188,7 +207,7 @@ async function runAgentCore(userMessage, model, traceId = null) {
   const messages = [{ role: "user", content: userMessage }];
   let stepNum = 0;
 
-  const systemPrompt = `You are a helpful AI assistant. When users ask about current events, latest news, recent updates, or anything that requires current information, use the web_search tool to fetch the latest data. For queries about news, articles, current information, or anything time-sensitive, always use web_search first.`;
+  const systemPrompt = `You are a helpful AI assistant. When users ask about current events, latest news, recent updates, or anything that requires current information, use the search_news tool to fetch the latest data in CSV format. For queries about news, articles, current information, or anything time-sensitive, always use search_news first as it returns data in structured CSV format (Title, Summary, Source) that is ready to display or export.`;
 
   while (true) {
     stepNum++;
@@ -252,7 +271,9 @@ async function runAgentCore(userMessage, model, traceId = null) {
 
           let result;
           try {
-            if (toolName === "web_search") {
+            if (toolName === "search_news") {
+              result = await executeSearchNews(toolInput.query);
+            } else if (toolName === "web_search") {
               result = await executeWebSearch(toolInput.query);
             } else if (toolName === "weather") {
               result = executeWeather(toolInput.location);
