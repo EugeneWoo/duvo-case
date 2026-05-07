@@ -207,7 +207,19 @@ async function runAgentCore(userMessage, model, traceId = null) {
   const messages = [{ role: "user", content: userMessage }];
   let stepNum = 0;
 
-  const systemPrompt = `You are a helpful AI assistant. When users ask about current events, latest news, recent updates, or anything that requires current information, use the search_news tool to fetch the latest data in CSV format. For queries about news, articles, current information, or anything time-sensitive, always use search_news first as it returns data in structured CSV format (Title, Summary, Source) that is ready to display or export.`;
+  const systemPrompt = `You are a helpful AI assistant with access to current information tools.
+
+IMPORTANT: When the user asks about:
+- Latest news or recent events
+- Current information or updates
+- Articles or stories from 2025
+- Anything that requires current data
+- News search queries
+
+You MUST use the search_news tool. This tool returns structured CSV data (Title, Summary, Source) that is perfect for displaying to users.
+
+Do NOT attempt to answer from your training data when the user is asking for current/latest information. Always use search_news for such queries.`;
+
 
   while (true) {
     stepNum++;
@@ -228,6 +240,7 @@ async function runAgentCore(userMessage, model, traceId = null) {
       max_tokens: 1024,
       system: systemPrompt,
       tools: tools,
+      tool_choice: "auto",
       messages: messages,
     });
 
